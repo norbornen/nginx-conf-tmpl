@@ -1,0 +1,64 @@
+http {
+	geoip_country	/usr/share/GeoIP/GeoIP.dat;
+
+	map $http_user_agent $redirectIsBot {
+        default         0;
+        ~YandexBot      1;
+        ~YaDirectBot    1;
+        ~Google         1;
+        ~Rambler        1;
+        ~Yahoo          1;
+        ~Mail           1;
+        ~msn            1;
+        ~bingbot        1;
+        ~Ask            1;
+        ~iCab           1;
+        ~NetPositive    1;
+        ~baidu          1;
+        ~Twiceler       1;
+    }
+    map $cookie__lang $redirectNotNeed {
+        default         $redirectIsBot;
+        ~.+$            1;
+    }
+    map $geoip_country_code $redirectCountryLang {
+        default         '';
+        RU              '';
+        UA              '';
+        BY              '';
+        KZ              '';
+        MD              '';
+        ~^.+$           /en;
+    }
+    map $http_accept_language $redirectAcceptLang {
+        default         -1;
+        ~*^ru           '';
+        ~*^uk           '';
+        ~*^kk           '';
+        ~*^be           '';
+        ~*^mo           '';
+        -               $redirectCountryLang;
+        ~^.+$           /en;
+    }
+    map $redirectAcceptLang $redirectTmp1Lang {
+        default         $redirectAcceptLang;
+        -1              $redirectCountryLang;
+    }
+    map $redirectNotNeed    $redirectTmp2Lang {
+        default         $redirectTmp1Lang;
+        1               '';
+    }
+	map $host   $redirectLangPrefix {
+        default         '';
+        'www.hse.ru'    $redirectTmp2Lang;
+    }
+}
+
+server {
+	location = / {
+		if ($redirectLangPrefix) {
+			return      302     $scheme://$host$redirectLangPrefix$uri;
+			expires     0;
+		}
+	}
+}
