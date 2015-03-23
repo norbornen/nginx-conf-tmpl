@@ -1,0 +1,12 @@
+server {
+    listen			443 ssl spdy;
+    #server_name     dev.dev;
+
+    ssl							on;
+    ssl_certificate             /path/to/ssl.crt/www_dev.chain.crt;
+    ssl_certificate_key         /path/to/ssl.key/www_dev.key;
+    ssl_protocols               TLSv1 TLSv1.1 TLSv1.2;  # don’t use SSLv3 ref: POODLE   http://nginx.com/blog/nginx-poodle-ssl/
+    ssl_prefer_server_ciphers   on;
+    ssl_session_cache           shared:SSL:10m;
+    ssl_session_timeout         10m;
+}
