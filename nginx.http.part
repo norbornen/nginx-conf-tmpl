@@ -1,0 +1,87 @@
+#user			httpd	robot;
+worker_processes	6;
+#pid			/var/run/nginx.pid;
+
+#----------------------------------------------------------------------
+
+events {
+	worker_connections	20480;
+}
+worker_rlimit_nofile	20480;
+
+#----------------------------------------------------------------------
+
+http {
+	include			mime.types;
+	default_type	text/html;
+	charset			utf-8;
+
+	index				index.html;
+	merge_slashes		on;
+
+	client_max_body_size		2000m;
+	sendfile					on;
+	tcp_nopush					on;
+	tcp_nodelay					on;
+	keepalive_timeout			30;
+	server_tokens				off;
+	reset_timedout_connection	on;
+	if_modified_since			before;
+
+
+	log_format	main	'$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent '
+			'"$http_referer" "$http_user_agent" "$http_x_forwarded_for" '
+#			'"ta=$cookie_ta,tu=$cookie_tu,rov=$cookie_rov" "$upstream_http_x_auth_ticket" '
+			'[request_time=$request_time, upstream_response_time=$upstream_response_time, cache=$upstream_cache_status] (upstream $upstream_addr // $upstream_status)" '
+			'[$host]';
+
+	#access_log		/data/nginx/logs/access.log	main;
+	#error_log		/data/nginx/logs/error.log	error;
+
+
+	open_file_cache				max=8000 inactive=150s;
+	open_file_cache_valid		120s;
+	open_file_cache_min_uses	2;
+	open_file_cache_errors		on;
+	open_log_file_cache			max=100 inactive=20s valid=1m min_uses=2;
+
+#	output_buffers		2 32k;
+
+#	proxy_cache_path			/data/nginx/cache1  levels=1:2	keys_zone=C1:25m inactive=30m max_size=2048m;
+#	proxy_cache_path			/data/nginx/cache2  levels=1:2:2  keys_zone=C2:20m inactive=1h  max_size=1024m;
+#	proxy_cache_path		/data/nginx/cache3	 levels=1:2	keys_zone=CAPI:10m inactive=15m max_size=1024m;
+	proxy_cache_use_stale	error timeout invalid_header updating http_500 http_502 http_503 http_504;
+	proxy_cache_lock		on;
+	proxy_cache_min_uses	2;
+	proxy_cache_lock_timeout	25s;
+	proxy_cache_methods		GET HEAD;
+	proxy_cache_valid		404	5m;
+	#proxy_cache_bypass		$cookie_ta;# $cookie_tu;
+	#proxy_no_cache		$cookie_ta;# $cookie_tu;
+	proxy_cache_key			 $scheme$host$uri$is_args$args; # needs for ngx_cache_purge
+
+	proxy_buffer_size			128k;
+	proxy_buffers				24 32k;
+	proxy_busy_buffers_size		256k;
+	proxy_temp_file_write_size	4m;
+
+	client_header_buffer_size	16k;
+	large_client_header_buffers	8 64k;
+	client_body_buffer_size     196K;
+
+	server_names_hash_max_size		4096;
+	server_names_hash_bucket_size	128;
+
+
+	gzip				on;
+	gzip_types			text/plain text/css text/xml application/xml application/x-javascript application/javascript application/json application/rss+xml application/rss application/x-rss+xml;
+	gzip_http_version	1.1;
+	gzip_comp_level		8;
+	gzip_min_length		1500;
+	gzip_buffers		32 8k;
+	gzip_proxied		any;
+	gzip_disable		msie6;
+
+
+	#limit_req_zone  $binary_remote_addr zone=one:10m rate=5r/s;
+}
