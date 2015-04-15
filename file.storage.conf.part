@@ -1,0 +1,22 @@
+location /media/ {
+	#	file storage anf images resizer
+	alias /data/$domain/media/;
+
+	mp4;
+	flv;
+	default_type	application/octet-stream;
+	access_log		off;
+	error_page      404 = @no;
+	location ~* .+(?<!\.css|js)$ {  # negative look behind
+		expires         1M;
+	}
+
+	location ~ ^/media/(.*?)\.([\d\-]+)x([\d\-]+)\.(jpe?g|gif|png)$ {
+		alias						/data/$domain/media/$1;
+		try_files                   "" =404;
+		image_filter                resize  $2  $3;
+		image_filter_buffer         40M;
+		image_filter_jpeg_quality   96;
+		image_filter_sharpen        75;
+	}
+}
